@@ -148,8 +148,8 @@ nv.models.scatterChart = function() {
       //------------------------------------------------------------
       // Setup Scales
 
-      x0 = x0 || x;
-      y0 = y0 || y;
+      x0 = x0 || scatter.xScale();
+      y0 = y0 || scatter.yScale();
 
       //------------------------------------------------------------
 
@@ -254,22 +254,23 @@ nv.models.scatterChart = function() {
       // Setup Axes
 
       xAxis
-          .scale(x)
+          .scale(scatter.xScale())
           .ticks( xAxis.ticks() && xAxis.ticks().length ? xAxis.ticks() : availableWidth / 100 )
           .tickSize( -availableHeight , 0);
 
-      g.select('.nv-x.nv-axis')
-          .attr('transform', 'translate(0,' + y.range()[0] + ')')
-          .call(xAxis);
-
-
       yAxis
-          .scale(y)
+          .scale(scatter.yScale())
           .ticks( yAxis.ticks() && yAxis.ticks().length ? yAxis.ticks() : availableHeight / 36 )
           .tickSize( -availableWidth, 0);
 
       g.select('.nv-y.nv-axis')
           .call(yAxis);
+
+
+      g.select('.nv-x.nv-axis')
+          .attr('transform', 'translate(0,' + scatter.yScale().range()[0] + ')')
+          .call(xAxis);
+
 
 
       if (showDistX) {
