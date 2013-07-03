@@ -144,12 +144,11 @@ nv.models.scatterChart = function() {
 
       //------------------------------------------------------------
 
-
       //------------------------------------------------------------
       // Setup Scales
 
-      x0 = x0 || scatter.xScale();
-      y0 = y0 || scatter.yScale();
+      x0 = x0 || x;
+      y0 = y0 || y;
 
       //------------------------------------------------------------
 
@@ -231,6 +230,9 @@ nv.models.scatterChart = function() {
           .datum(data.filter(function(d) { return !d.disabled }))
           .call(scatter);
 
+      // Need to reset x,y scales as the types are now dependent on data!
+      x = scatter.xScale();
+      y = scatter.yScale();
 
       //Adjust for x and y padding
       if (xPadding) {
@@ -254,12 +256,12 @@ nv.models.scatterChart = function() {
       // Setup Axes
 
       xAxis
-          .scale(scatter.xScale())
+          .scale(x)
           .ticks( xAxis.ticks() && xAxis.ticks().length ? xAxis.ticks() : availableWidth / 100 )
           .tickSize( -availableHeight , 0);
 
       yAxis
-          .scale(scatter.yScale())
+          .scale(y)
           .ticks( yAxis.ticks() && yAxis.ticks().length ? yAxis.ticks() : availableHeight / 36 )
           .tickSize( -availableWidth, 0);
 

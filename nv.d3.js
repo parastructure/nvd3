@@ -10064,7 +10064,7 @@ nv.models.scatter = function() {
 
 
         //inject series and point index for reference into voronoi
-        if (useVoronoi === true && (!ordinalX && !ordinalY)) {
+        if (false) {
 
           if (clipVoronoi) {
             var pointClipsEnter = wrap.select('defs').selectAll('.nv-point-clips')
@@ -10616,7 +10616,7 @@ nv.models.scatterChart = function() {
     var left = e.pos[0] + ( offsetElement.offsetLeft || 0 ),
         top = e.pos[1] + ( offsetElement.offsetTop || 0),
         leftX = e.pos[0] + ( offsetElement.offsetLeft || 0 ),
-        topX = scatter.yScale().range()[0] + margin.top + ( offsetElement.offsetTop || 0),
+        topX = y.range()[0] + margin.top + ( offsetElement.offsetTop || 0),
         leftY = x.range()[0] + margin.left + ( offsetElement.offsetLeft || 0 ),
         topY = e.pos[1] + ( offsetElement.offsetTop || 0),
         xVal = xAxis.tickFormat()(scatter.x()(e.point, e.pointIndex)),
@@ -10687,13 +10687,11 @@ nv.models.scatterChart = function() {
 
       //------------------------------------------------------------
 
-
       //------------------------------------------------------------
       // Setup Scales
-      x = scatter.xScale();
-      y = scatter.yScale();
-      x0 = x0 || scatter.xScale();
-      y0 = y0 || scatter.yScale();
+
+      x0 = x0 || x;
+      y0 = y0 || y;
 
       //------------------------------------------------------------
 
@@ -10775,6 +10773,9 @@ nv.models.scatterChart = function() {
           .datum(data.filter(function(d) { return !d.disabled }))
           .call(scatter);
 
+      // Need to reset x,y scales as the types are now dependent on data!
+      x = scatter.xScale();
+      y = scatter.yScale();
 
       //Adjust for x and y padding
       if (xPadding) {
@@ -10798,12 +10799,12 @@ nv.models.scatterChart = function() {
       // Setup Axes
 
       xAxis
-          .scale(scatter.xScale())
+          .scale(x)
           .ticks( xAxis.ticks() && xAxis.ticks().length ? xAxis.ticks() : availableWidth / 100 )
           .tickSize( -availableHeight , 0);
 
       yAxis
-          .scale(scatter.yScale())
+          .scale(y)
           .ticks( yAxis.ticks() && yAxis.ticks().length ? yAxis.ticks() : availableHeight / 36 )
           .tickSize( -availableWidth, 0);
 
@@ -10820,7 +10821,7 @@ nv.models.scatterChart = function() {
       if (showDistX) {
         distX
             .getData(scatter.x())
-            .scale(scatter.xScale())
+            .scale(x)
             .width(availableWidth)
             .color(data.map(function(d,i) {
               return d.color || color(d, i);
@@ -10828,7 +10829,7 @@ nv.models.scatterChart = function() {
         gEnter.select('.nv-distWrap').append('g')
             .attr('class', 'nv-distributionX');
         g.select('.nv-distributionX')
-            .attr('transform', 'translate(0,' + scatter.yScale().range()[0] + ')')
+            .attr('transform', 'translate(0,' + y.range()[0] + ')')
             .datum(data.filter(function(d) { return !d.disabled }))
             .call(distX);
       }
@@ -10836,7 +10837,7 @@ nv.models.scatterChart = function() {
       if (showDistY) {
         distY
             .getData(scatter.y())
-            .scale(scatter.yScale())
+            .scale(y)
             .width(availableHeight)
             .color(data.map(function(d,i) {
               return d.color || color(d, i);
@@ -10968,7 +10969,6 @@ nv.models.scatterChart = function() {
             .attr('x2', e.pos[0] + distX.size());
 
         e.pos = [e.pos[0] + margin.left, e.pos[1] + margin.top];
-
         dispatch.tooltipShow(e);
       });
 
