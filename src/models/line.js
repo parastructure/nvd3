@@ -46,14 +46,7 @@ nv.models.line = function() {
           availableHeight = height - margin.top - margin.bottom,
           container = d3.select(this);
 
-      //------------------------------------------------------------
-      // Setup Scales
 
-      x = scatter.xScale();
-      y = scatter.yScale();
-
-      x0 = x0 || x;
-      y0 = y0 || y;
 
       //------------------------------------------------------------
 
@@ -74,9 +67,6 @@ nv.models.line = function() {
 
       //------------------------------------------------------------
 
-
-
-
       scatter
         .width(availableWidth)
         .height(availableHeight)
@@ -86,6 +76,13 @@ nv.models.line = function() {
 
       d3.transition(scatterWrap).call(scatter);
 
+      //------------------------------------------------------------
+      // Setup Scales
+
+      x = scatter.xScale();
+      y = scatter.yScale();
+      x0 = x0 || x;
+      y0 = y0 || y;
 
 
       defsEnter.append('clipPath')

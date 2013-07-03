@@ -368,6 +368,10 @@ nv.utils.calcApproxTextWidth = function (svgTextElem) {
     }
     return 0;
 };
+
+nv.utils.isOrdinalValue = function (val) {
+  return Object.prototype.toString.call(val) == '[object String]';
+};
 nv.models.axis = function() {
 
   //============================================================
@@ -4213,14 +4217,7 @@ nv.models.line = function() {
           availableHeight = height - margin.top - margin.bottom,
           container = d3.select(this);
 
-      //------------------------------------------------------------
-      // Setup Scales
 
-      x = scatter.xScale();
-      y = scatter.yScale();
-
-      x0 = x0 || x;
-      y0 = y0 || y;
 
       //------------------------------------------------------------
 
@@ -4241,9 +4238,6 @@ nv.models.line = function() {
 
       //------------------------------------------------------------
 
-
-
-
       scatter
         .width(availableWidth)
         .height(availableHeight)
@@ -4253,6 +4247,13 @@ nv.models.line = function() {
 
       d3.transition(scatterWrap).call(scatter);
 
+      //------------------------------------------------------------
+      // Setup Scales
+
+      x = scatter.xScale();
+      y = scatter.yScale();
+      x0 = x0 || x;
+      y0 = y0 || y;
 
 
       defsEnter.append('clipPath')
@@ -4654,19 +4655,19 @@ nv.models.lineChart = function() {
 
       if (showXAxis) {
         xAxis
-          .scale(x)
+          .scale(lines.xScale())
           .ticks( availableWidth / 100 )
           .tickSize(-availableHeight, 0);
 
         g.select('.nv-x.nv-axis')
-            .attr('transform', 'translate(0,' + y.range()[0] + ')');
+            .attr('transform', 'translate(0,' + lines.yScale().range()[0] + ')');
         d3.transition(g.select('.nv-x.nv-axis'))
             .call(xAxis);
       }
 
       if (showYAxis) {
         yAxis
-          .scale(y)
+          .scale(lines.yScale())
           .ticks( availableHeight / 36 )
           .tickSize( -availableWidth, 0);
 
@@ -9621,7 +9622,7 @@ nv.models.pieChart = function() {
       chart.container = this;
 
       //set state.disabled
-      state.disabled = data[0].map(function(d) { return !!d.disabled });
+      state.disabled = data.map(function(d) { return !!d.disabled });
 
       if (!defaultState) {
         var key;
@@ -9637,7 +9638,7 @@ nv.models.pieChart = function() {
       //------------------------------------------------------------
       // Display No Data message if there's nothing to show.
 
-      if (!data[0] || !data[0].length) {
+      if (!data || !data.length) {
         var noDataText = container.selectAll('.nv-noData').data([noData]);
 
         noDataText.enter().append('text')
@@ -9901,6 +9902,8 @@ nv.models.scatter = function() {
     , singlePoint  = false
     , dispatch     = d3.dispatch('elementClick', 'elementMouseover', 'elementMouseout')
     , useVoronoi   = true
+    , ordinalX     = false
+    , ordinalY     = false
     ;
 
   //============================================================
@@ -9945,41 +9948,56 @@ nv.models.scatter = function() {
                 })
               })
             );
+      if(nv.utils.isOrdinalValue(seriesData[0].x)){
+        ordinalX = true;
+      }
+      if(nv.utils.isOrdinalValue(seriesData[0].y)){
+        ordinalY = true;
+      }
 
-      x   .domain(xDomain || d3.extent(seriesData.map(function(d) { return d.x; }).concat(forceX)))
 
-      if (padData && data[0])
-        x.range([(availableWidth * padDataOuter +  availableWidth) / (2 *data[0].values.length), availableWidth - availableWidth * (1 + padDataOuter) / (2 * data[0].values.length)  ]);
-        //x.range([availableWidth * .5 / data[0].values.length, availableWidth * (data[0].values.length - .5)  / data[0].values.length ]);
-      else
-        x.range([0, availableWidth]);
+      if(ordinalX){
+        var xVals = seriesData.map(function(d) { return d.x; });
+        x = d3.scale.ordinal().domain(xVals).rangePoints([0, availableWidth]);
+      }else{
+        x   .domain(xDomain || d3.extent(seriesData.map(function(d) { return d.x; }).concat(forceX)))
+        if (padData && data[0])
+          x.range([(availableWidth * padDataOuter +  availableWidth) / (2 *data[0].values.length), availableWidth - availableWidth * (1 + padDataOuter) / (2 * data[0].values.length)  ]);
+          //x.range([availableWidth * .5 / data[0].values.length, availableWidth * (data[0].values.length - .5)  / data[0].values.length ]);
+        else
+          x.range([0, availableWidth]);
 
-      y   .domain(yDomain || d3.extent(seriesData.map(function(d) { return d.y }).concat(forceY)))
-          .range([availableHeight, 0]);
+        if (x.domain()[0] === x.domain()[1]) singlePoint = true;
+
+        if (x.domain()[0] === x.domain()[1])
+          x.domain()[0] ?
+              x.domain([x.domain()[0] - x.domain()[0] * 0.01, x.domain()[1] + x.domain()[1] * 0.01])
+            : x.domain([-1,1]);
+
+        if ( isNaN(x.domain()[0])) {
+            x.domain([-1,1]);
+        }
+      }
+
+      if(ordinalY){
+        var yVals = seriesData.map(function(d) { return d.y; });
+        y = d3.scale.ordinal().domain(yVals).rangePoints([availableHeight,0]);
+      }else{
+        if(y.domain()[0] === y.domain()[1]) singlePoint = true;
+        y   .domain(yDomain || d3.extent(seriesData.map(function(d) { return d.y }).concat(forceY)))
+            .range([availableHeight, 0]);
+        if (y.domain()[0] === y.domain()[1])
+          y.domain()[0] ?
+              y.domain([y.domain()[0] + y.domain()[0] * 0.01, y.domain()[1] - y.domain()[1] * 0.01])
+            : y.domain([-1,1]);
+
+        if ( isNaN(y.domain()[0])) {
+            y.domain([-1,1]);
+        }
+      }
 
       z   .domain(sizeDomain || d3.extent(seriesData.map(function(d) { return d.size }).concat(forceSize)))
           .range(sizeRange || [16, 256]);
-
-      // If scale's domain don't have a range, slightly adjust to make one... so a chart can show a single data point
-      if (x.domain()[0] === x.domain()[1] || y.domain()[0] === y.domain()[1]) singlePoint = true;
-      if (x.domain()[0] === x.domain()[1])
-        x.domain()[0] ?
-            x.domain([x.domain()[0] - x.domain()[0] * 0.01, x.domain()[1] + x.domain()[1] * 0.01])
-          : x.domain([-1,1]);
-
-      if (y.domain()[0] === y.domain()[1])
-        y.domain()[0] ?
-            y.domain([y.domain()[0] + y.domain()[0] * 0.01, y.domain()[1] - y.domain()[1] * 0.01])
-          : y.domain([-1,1]);
-
-      if ( isNaN(x.domain()[0])) {
-          x.domain([-1,1]);
-      }
-
-      if ( isNaN(y.domain()[0])) {
-          y.domain([-1,1]);
-      }
-
 
       x0 = x0 || x;
       y0 = y0 || y;
@@ -10046,7 +10064,7 @@ nv.models.scatter = function() {
 
 
         //inject series and point index for reference into voronoi
-        if (useVoronoi === true) {
+        if (useVoronoi === true && (!ordinalX && !ordinalY)) {
 
           if (clipVoronoi) {
             var pointClipsEnter = wrap.select('defs').selectAll('.nv-point-clips')
@@ -10598,7 +10616,7 @@ nv.models.scatterChart = function() {
     var left = e.pos[0] + ( offsetElement.offsetLeft || 0 ),
         top = e.pos[1] + ( offsetElement.offsetTop || 0),
         leftX = e.pos[0] + ( offsetElement.offsetLeft || 0 ),
-        topX = y.range()[0] + margin.top + ( offsetElement.offsetTop || 0),
+        topX = scatter.yScale().range()[0] + margin.top + ( offsetElement.offsetTop || 0),
         leftY = x.range()[0] + margin.left + ( offsetElement.offsetLeft || 0 ),
         topY = e.pos[1] + ( offsetElement.offsetTop || 0),
         xVal = xAxis.tickFormat()(scatter.x()(e.point, e.pointIndex)),
@@ -10672,9 +10690,10 @@ nv.models.scatterChart = function() {
 
       //------------------------------------------------------------
       // Setup Scales
-
-      x0 = x0 || x;
-      y0 = y0 || y;
+      x = scatter.xScale();
+      y = scatter.yScale();
+      x0 = x0 || scatter.xScale();
+      y0 = y0 || scatter.yScale();
 
       //------------------------------------------------------------
 
@@ -10779,17 +10798,12 @@ nv.models.scatterChart = function() {
       // Setup Axes
 
       xAxis
-          .scale(x)
+          .scale(scatter.xScale())
           .ticks( xAxis.ticks() && xAxis.ticks().length ? xAxis.ticks() : availableWidth / 100 )
           .tickSize( -availableHeight , 0);
 
-      g.select('.nv-x.nv-axis')
-          .attr('transform', 'translate(0,' + y.range()[0] + ')')
-          .call(xAxis);
-
-
       yAxis
-          .scale(y)
+          .scale(scatter.yScale())
           .ticks( yAxis.ticks() && yAxis.ticks().length ? yAxis.ticks() : availableHeight / 36 )
           .tickSize( -availableWidth, 0);
 
@@ -10797,10 +10811,16 @@ nv.models.scatterChart = function() {
           .call(yAxis);
 
 
+      g.select('.nv-x.nv-axis')
+          .attr('transform', 'translate(0,' + scatter.yScale().range()[0] + ')')
+          .call(xAxis);
+
+
+
       if (showDistX) {
         distX
             .getData(scatter.x())
-            .scale(x)
+            .scale(scatter.xScale())
             .width(availableWidth)
             .color(data.map(function(d,i) {
               return d.color || color(d, i);
@@ -10808,7 +10828,7 @@ nv.models.scatterChart = function() {
         gEnter.select('.nv-distWrap').append('g')
             .attr('class', 'nv-distributionX');
         g.select('.nv-distributionX')
-            .attr('transform', 'translate(0,' + y.range()[0] + ')')
+            .attr('transform', 'translate(0,' + scatter.yScale().range()[0] + ')')
             .datum(data.filter(function(d) { return !d.disabled }))
             .call(distX);
       }
@@ -10816,7 +10836,7 @@ nv.models.scatterChart = function() {
       if (showDistY) {
         distY
             .getData(scatter.y())
-            .scale(y)
+            .scale(scatter.yScale())
             .width(availableHeight)
             .color(data.map(function(d,i) {
               return d.color || color(d, i);
@@ -10948,6 +10968,7 @@ nv.models.scatterChart = function() {
             .attr('x2', e.pos[0] + distX.size());
 
         e.pos = [e.pos[0] + margin.left, e.pos[1] + margin.top];
+
         dispatch.tooltipShow(e);
       });
 

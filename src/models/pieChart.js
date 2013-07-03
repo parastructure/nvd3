@@ -74,7 +74,7 @@ nv.models.pieChart = function() {
       //------------------------------------------------------------
       // Display No Data message if there's nothing to show.
 
-      if (!data[0] || !data[0].length) {
+      if (!data || !data.length) {
         var noDataText = container.selectAll('.nv-noData').data([noData]);
 
         noDataText.enter().append('text')

@@ -116,3 +116,7 @@ nv.utils.calcApproxTextWidth = function (svgTextElem) {
     }
     return 0;
 };
+
+nv.utils.isOrdinalValue = function (val) {
+  return Object.prototype.toString.call(val) == '[object String]';
+};

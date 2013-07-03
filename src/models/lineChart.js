@@ -203,19 +203,19 @@ nv.models.lineChart = function() {
 
       if (showXAxis) {
         xAxis
-          .scale(x)
+          .scale(lines.xScale())
           .ticks( availableWidth / 100 )
           .tickSize(-availableHeight, 0);
 
         g.select('.nv-x.nv-axis')
-            .attr('transform', 'translate(0,' + y.range()[0] + ')');
+            .attr('transform', 'translate(0,' + lines.yScale().range()[0] + ')');
         d3.transition(g.select('.nv-x.nv-axis'))
             .call(xAxis);
       }
 
       if (showYAxis) {
         yAxis
-          .scale(y)
+          .scale(lines.yScale())
           .ticks( availableHeight / 36 )
           .tickSize( -availableWidth, 0);
 
