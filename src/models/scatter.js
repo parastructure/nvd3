@@ -198,7 +198,7 @@ nv.models.scatter = function() {
 
 
         //inject series and point index for reference into voronoi
-        if (false) {
+        if (useVoronoi && (!ordinalX && !ordinalY)) {
 
           if (clipVoronoi) {
             var pointClipsEnter = wrap.select('defs').selectAll('.nv-point-clips')
